@@ -47,7 +47,14 @@ void FormatsDialog::on_tbAdd_clicked()
 void FormatsDialog::on_tbEdit_clicked()
 {
     FormatDialog formatDialog(this);
+
+    QTreeWidgetItem * item = ui->twFormats->currentItem();
+    QString name = m_items.key(item);
+
     formatDialog.setExtensionReadOnly(true);
+    formatDialog.setExtension(name);
+    formatDialog.setFormat(m_formatContainer->format(name));
+
     if (formatDialog.exec() == QDialog::Accepted)
     {
         m_formatContainer->insertFormat(formatDialog.extension(), formatDialog.format());

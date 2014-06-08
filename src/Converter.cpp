@@ -39,22 +39,22 @@ void Converter::progressDirectory(const QString & inputDirpath,
     QDir inputDir(inputDirpath);
     QDir outputDir(outputDirpath);
 
-    foreach (QFileInfo di, inputDir.entryInfoList(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks | QDir::Readable))
-    {
-        if (!outputDir.exists(di.fileName()))
-        {
-            outputDir.mkdir(di.fileName());
-        }
-        progressDirectory(di.absoluteFilePath(), QString("%1/%2").arg(outputDirpath).arg(di.fileName()));
-    }
-
-    foreach (QFileInfo fi, inputDir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks | QDir::Readable))
+    foreach (QFileInfo fi, inputDir.entryInfoList(QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks | QDir::Readable, QDir::Name))
     {
         QString outputFilepath = QString("%1/%2.%3").arg(outputDirpath).arg(fi.fileName().section('.', 0, -2)).arg(m_extension);
         if (!QFile::exists(outputFilepath))
         {
             convert(fi.absoluteFilePath(), outputFilepath);
         }
+    }
+
+    foreach (QFileInfo di, inputDir.entryInfoList(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::NoSymLinks | QDir::Readable, QDir::Name))
+    {
+        if (!outputDir.exists(di.fileName()))
+        {
+            outputDir.mkdir(di.fileName());
+        }
+        progressDirectory(di.absoluteFilePath(), QString("%1/%2").arg(outputDirpath).arg(di.fileName()));
     }
 }
 
