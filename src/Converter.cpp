@@ -10,6 +10,11 @@ Converter::Converter(QObject * parent) :
 {
 }
 
+Converter::~Converter()
+{
+    clear();
+}
+
 void Converter::convertDirectory(const QString & inputDirpath,
                                  const QString & outputDirpath,
                                  const QString & extension,
@@ -25,7 +30,16 @@ void Converter::convertDirectory(const QString & inputDirpath,
 
 void Converter::stop()
 {
+    exit();
+    clear();
+}
 
+void Converter::clear()
+{
+    if (!m_currentFilepath.isEmpty())
+    {
+        QFile::remove(m_currentFilepath);
+    }
 }
 
 void Converter::run()
@@ -64,7 +78,16 @@ void Converter::convert(const QString & inputFilepath, const QString & outputFil
     program.replace("%input_filepath", inputFilepath);
     program.replace("%output_filepath", outputFilepath);
 
+    m_currentFilepath = outputFilepath;
+
     QProcess process;
     process.start(program);
     process.waitForFinished(600000);
+
+    m_currentFilepath.clear();
+
+    if (!process.exitCode())
+    {
+        emit fileConvertFailed(QString(process.readAllStandardError()));
+    }
 }

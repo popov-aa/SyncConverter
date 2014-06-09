@@ -13,8 +13,7 @@ MainWindow::MainWindow(QWidget * parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     m_inputDirectory("INPUT_DIRECTORY"),
-    m_outputDirectory("OUTPUT_DIRECTORY"),
-    m_action(Stop)
+    m_outputDirectory("OUTPUT_DIRECTORY")
 {
     ui->setupUi(this);
 
@@ -27,6 +26,15 @@ MainWindow::MainWindow(QWidget * parent) :
 
     formatComboBoxUpdate();
     triggerButtonUpdate();
+
+    QObject::connect(m_converter, SIGNAL(started()),
+                     this, SLOT(triggerButtonUpdate()));
+    QObject::connect(m_converter, SIGNAL(finished()),
+                     this, SLOT(triggerButtonUpdate()));
+    QObject::connect(m_converter, SIGNAL(fileConvertFailed(QString)),
+                     this, SLOT(fileConvertFailed(QString)));
+
+    ui->pbQuit->setIcon(QApplication::style()->standardIcon(QStyle::SP_DialogCloseButton));
 }
 
 MainWindow::~MainWindow()
@@ -56,50 +64,53 @@ void MainWindow::on_tbOutputDir_clicked()
 
 void MainWindow::on_pbTrigger_clicked()
 {
-    switch (m_action)
+    if (m_converter->isRunning())
     {
-        case Start:
+        m_converter->stop();
+    }
+    else
+    {
+        if (ui->leInputDir->text().isEmpty())
         {
-            if (ui->leInputDir->text().isEmpty())
-            {
-                QMessageBox::warning(this, tr("Warning..."), tr("Input directory is empty."));
-            }
-            else if (ui->leOutputDir->text().isEmpty())
-            {
-                QMessageBox::warning(this, tr("Warning..."), tr("Output directory is empty."));
-            }
-            else if (ui->cbOutputFormat->currentIndex() == -1)
-            {
-                QMessageBox::warning(this, tr("Warning..."), tr("Format is not selected."));
-            }
-            else
-            {
-                m_converter->convertDirectory(
-                            ui->leInputDir->text(),
-                            ui->leOutputDir->text(),
-                            ui->cbOutputFormat->currentText(),
-                            m_formatContainer->format(ui->cbOutputFormat->currentText())
-                            );
-                m_action = Stop;
-                return triggerButtonUpdate();
-            }
+            QMessageBox::warning(this, tr("Warning..."), tr("Input directory is empty."));
         }
-        case Stop:
+        else if (ui->leOutputDir->text().isEmpty())
         {
-            m_converter->stop();
-            m_action = Start;
-            return triggerButtonUpdate();
+            QMessageBox::warning(this, tr("Warning..."), tr("Output directory is empty."));
+        }
+        else if (ui->cbOutputFormat->currentIndex() == -1)
+        {
+            QMessageBox::warning(this, tr("Warning..."), tr("Format is not selected."));
+        }
+        else
+        {
+            m_converter->convertDirectory(
+                        ui->leInputDir->text(),
+                        ui->leOutputDir->text(),
+                        ui->cbOutputFormat->currentText(),
+                        m_formatContainer->format(ui->cbOutputFormat->currentText())
+                        );
         }
     }
 }
 
 void MainWindow::triggerButtonUpdate()
 {
-    switch (m_action)
+    if (m_converter->isRunning())
     {
-        case Start: ui->pbTrigger->setText(tr("Start")); break;
-        case Stop: ui->pbTrigger->setText(tr("Stop")); break;
+        ui->pbTrigger->setIcon(QApplication::style()->standardIcon(QStyle::SP_MediaStop));
+        ui->pbTrigger->setText(tr("Stop"));
     }
+    else
+    {
+        ui->pbTrigger->setIcon(QApplication::style()->standardIcon(QStyle::SP_MediaPlay));
+        ui->pbTrigger->setText(tr("Start"));
+    }
+}
+
+void MainWindow::fileConvertFailed(QString output)
+{
+    QMessageBox::critical(this, tr("Error..."), output);
 }
 
 void MainWindow::on_tbOutputFormat_clicked()
@@ -109,13 +120,14 @@ void MainWindow::on_tbOutputFormat_clicked()
     formatComboBoxUpdate();
 }
 
+void MainWindow::on_pbQuit_clicked()
+{
+    QApplication::quit();
+}
+
 void MainWindow::formatComboBoxUpdate()
 {
     ui->cbOutputFormat->clear();
     ui->cbOutputFormat->addItems(m_formatContainer->names());
 }
 
-void MainWindow::on_pbQuit_clicked()
-{
-    QApplication::quit();
-}

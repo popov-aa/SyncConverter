@@ -11,6 +11,7 @@ class Converter : public QThread
 public:
 
     explicit Converter(QObject * parent = 0);
+    virtual ~Converter();
 
 public slots:
 
@@ -19,6 +20,12 @@ public slots:
                           const QString & extension,
                           const QString & format);
     void stop();
+
+    void clear();
+
+signals:
+
+    void fileConvertFailed(QString output);
 
 protected:
 
@@ -34,6 +41,8 @@ private:
     QString m_outputDirpath;
     QString m_extension;
     QString m_format;
+
+    QString m_currentFilepath;
 
 };
 
